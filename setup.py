@@ -10,6 +10,6 @@ setup(
    license="MIT",
    long_description=long_description,
    author='Ronen Tamari',
-   packages=['dbca'],  #same as name
+   packages=['dbca','dbca.dataset'],  #same as name
    install_requires=['networkx'], #external packages as dependencies
 )
