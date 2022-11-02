@@ -1,3 +1,4 @@
+from distutils.command.config import config
 from typing import List, Tuple
 import logging
 import numpy as np
@@ -68,7 +69,8 @@ class DBCASplitter:
             config (DBCASplitterConfig, optional): Optional settings for split generation.
         """
         self.sample_store = SampleStore(samples)
-        self.full_sample_set = FullSampleSet(sample_store=self.sample_store)
+        # the top_n_compounds follows configuration
+        self.full_sample_set = FullSampleSet(sample_store=self.sample_store, top_n_compounds=config.max_compounds)  
         self.sample_splits = {s_id: None for s_id in self.full_sample_set.sample_ids}
         self.unused_sample_ids = set(self.sample_splits.keys())
         
@@ -396,7 +398,7 @@ class DBCASplitter:
         
         
     @classmethod
-    def measure_sample_sets(cls, train_set: List[Sample], test_set: List[Sample]):
+    def measure_sample_sets(cls, train_set: List[Sample], test_set: List[Sample], config: DBCASplitterConfig = None):
         """
         Measure atom and compound divergence between two existing sample sets.
     
@@ -417,7 +419,8 @@ class DBCASplitter:
             DBCASplitter object containing full split details.
         
         """
-        dbca_splitter = cls(train_set + test_set)
+        # UPDATE: config is passed here since the max_n_compound account for the measurement
+        dbca_splitter = cls(train_set + test_set, config = config)
         for sample in train_set:
             dbca_splitter.add_sample_to_set(sample.id, dbca_splitter.train_set)
         
