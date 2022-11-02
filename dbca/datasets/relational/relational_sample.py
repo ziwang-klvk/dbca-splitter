@@ -1,5 +1,6 @@
 from typing import List, Set, Tuple, Iterable
 import networkx as nx
+from networkx import is_weakly_connected, to_nested_tuple, lexicographical_topological_sort
 from collections import defaultdict
 from itertools import product, combinations
 
@@ -22,8 +23,8 @@ class RelationalCompound(Compound):
 
         # create unique ordering for atoms
         # UPDATE: represent the compound as a string of topological ordering + tree structure.
-        tree_structure = str(nx.to_nested_tuple(self.G.to_undirected(), root = min(self.G.nodes())))
-        self._repr = '_'.join([self.G.nodes.data()[i]['rule'] for i in list(nx.lexicographical_topological_sort(self.G))]+[tree_structure])
+        tree_structure = str(to_nested_tuple(self.G.to_undirected(), root = min(self.G.nodes())))
+        self._repr = '_'.join([self.G.nodes.data()[i]['rule'] for i in list(lexicographical_topological_sort(self.G))]+[tree_structure])
         
     def __repr__(self):
         return self._repr
@@ -59,7 +60,6 @@ class RelationalSample(Sample):
         self.G = graph
         self.compounds_by_type = defaultdict(list)
         # consider subgraph with nodes more than 2
-        assert self.c_max_n_nodes > 1
         self.c_max_n_nodes = c_max_n_nodes
         self.c_max_n_branch = c_max_n_branch
         
@@ -72,8 +72,7 @@ class RelationalSample(Sample):
         UPDATE: Represent atoms with rules
         """
         return list(dict(self.G.nodes(data = 'rule')).values())
-    
-    
+
     @property
     def compounds(self) -> List[str]:
         """
@@ -82,20 +81,18 @@ class RelationalSample(Sample):
             
         UPDATE: add method for generating non-linear subgraphs, new parameters required for determining subgraph size.
         """
+
         if hasattr(self, "_compounds"):
             return self._compounds
         else:
             self._compounds = []
-            for a1, a2 in product(self.atoms, self.atoms):
-                new_compounds = [RelationalCompound(self.G.edge_subgraph(p), self.G, self.id) 
-                                 for p in list(nx.all_simple_edge_paths(
-                                         self.G, source=a1, target=a2)) if p]
-    
 
-                self._compounds += new_compounds
+            new_linear_compounds = self.gen_linear_compound()
+
+            self._compounds += new_linear_compounds
 
             new_nonlinear_compounds = self.gen_nonlinear_compound()
-            
+
             self._compounds += new_nonlinear_compounds
             
             # otherwise we will double count subgraphs
@@ -115,17 +112,29 @@ class RelationalSample(Sample):
     def compounds_types(self) -> List[str]:
         return list(self.compounds_by_type.keys())
     
-                
+
     def gen_nonlinear_compound(self):
+        G = self.G
+        id = self.id
+        c_max_n_branch = self.c_max_n_branch
         new_compounds = []
         for n_nodes in range(2, self.c_max_n_nodes+1):
-            for combs in combinations(self.G.nodes, n_nodes):
-                compound = self.G.subgraph(combs)
-                if nx.is_weakly_connected(compound) and max_degree(compound) <= self.c_max_n_branch:
-                    r_compound = RelationalCompound(compound, self.G, self.id)
+            for combs in combinations(G.nodes, n_nodes):
+                compound = G.subgraph(combs)
+                if is_weakly_connected(compound) and max_degree(compound) <= c_max_n_branch:
+                    r_compound = RelationalCompound(compound, G, id)
                     new_compounds.append(r_compound)
         return new_compounds
 
+    def gen_linear_compound(self):
+        G = self.G
+        id = self.id
+        new_compounds = []
+        for a1, a2 in product(G.nodes(), G.nodes()):
+            new_compounds += [RelationalCompound(G.edge_subgraph(p), G, id)
+                             for p in list(nx.all_simple_edge_paths(G, source=a1, target=a2)) if p]
+
+        return new_compounds
 
 
 def max_degree(G: nx.DiGraph):

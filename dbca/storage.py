@@ -33,25 +33,30 @@ class SampleStore:
         self._compounds_by_samp = defaultdict(partial(defaultdict, partial(defaultdict, Compound)))
 
         self._compounds_by_uid = {}
-        
+
         logger.info("Loading samples into storage...")
         self.load_samples(samples)
         logger.info("Done!")
-        
+
+
     def load_samples(self, samples: List[Sample]):
         """ 
         Load samples to storage.
         """            
         self._samples.update({s.id : s for s in samples})
-        
+        _compounds_by_type = self._compounds_by_type
+        _compounds_by_samp = self._compounds_by_samp
+        _compounds_by_uid = self._compounds_by_uid
         for s in tqdm(samples, total=len(samples)):
             self._sample_atoms.update({s.id: s.atoms})
             for i, c in enumerate(s.compounds):
                 # get unique id for each compound occurence in sample set
                 c_uid = f"{s.id}_{str(c)}_{i}" 
-                self._compounds_by_type[str(c)][s.id][c_uid] = c
-                self._compounds_by_samp[s.id][str(c)][c_uid] = c
-                self._compounds_by_uid[c_uid] = c
+                _compounds_by_type[str(c)][s.id][c_uid] = c
+                _compounds_by_samp[s.id][str(c)][c_uid] = c
+                _compounds_by_uid[c_uid] = c
+
+
         
     @property
     def size(self) -> int:
