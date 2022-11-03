@@ -91,9 +91,9 @@ class RelationalSample(Sample):
 
             self._compounds += new_linear_compounds
 
-            new_nonlinear_compounds = self.gen_nonlinear_compound()
+            # new_nonlinear_compounds = self.gen_nonlinear_compound()
 
-            self._compounds += new_nonlinear_compounds
+            # self._compounds += new_nonlinear_compounds
             
             # otherwise we will double count subgraphs
             self._compounds = set(self._compounds)

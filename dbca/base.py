@@ -45,15 +45,15 @@ class Compound(DAG):
         """
         return self._sid
     
-    def is_super_edge(self, edge: Tuple[str,str]) -> bool:
+    def is_super_edge(self, edge_value: str) -> bool:
         """
         Return True if edge contained in compound's supergraph.
-    
+
+        UPDATE: The method now receives the edge values
         """
-        source, target = edge
-        return (source, target) in self._G.edges()
+        return edge_value in nx.get_edge_attributes(self._G, name='connection').values()
     
-    def super_edges(self) -> Set[Tuple[str,str]]:
+    def super_edges(self) -> Set[str]:
         """
         Return the set of super edges of this compound - edges between a node in the compound sub-graph and one
         outside the compound sub-graph.
@@ -65,8 +65,9 @@ class Compound(DAG):
 
         """
         # super graphs represented by super edges, or union of incoming, outgoing edges from sub graph.
-        in_edges = set([e for e in self._G.in_edges(self._sG.nodes()) if not e in self._sG.edges()])
-        out_edges = set([e for e in self._G.out_edges(self._sG.nodes()) if not e in self._sG.edges()])
+        # UPDATE: return edge values instead of tuple.
+        in_edges = set([e[2] for e in self._G.in_edges(self._sG.nodes(), data='connection') if not e in self._sG.edges(data='connection')])
+        out_edges = set([e[2] for e in self._G.out_edges(self._sG.nodes(), data='connection') if not e in self._sG.edges(data='connection')])
         return in_edges | out_edges
         
         
