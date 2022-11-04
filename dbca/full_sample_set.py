@@ -68,8 +68,8 @@ class FullSampleSet(SampleSet):
             
         
 
-    
-    def load_samples(self, sample_ids: List[str]):
+
+    def load_samples(self, sample_ids: List[str], progress_proxy):
         """
         Load samples by id and compute atom and compound weights for full sample set.
 
